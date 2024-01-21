@@ -1,2 +1,3 @@
 # -ECSGame
-This is a exam project for functional programming course
+
+This is an exam project for functional programming course
