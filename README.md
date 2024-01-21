@@ -1,6 +1,6 @@
 # ECS Fighting game
 
-Functional Programming Game Project
+### Functional Programming Game Project
 Welcome to my functional programming game project, a result of an examination in the Functional Programming course.
 
 ### Project Overview
