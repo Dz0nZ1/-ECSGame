@@ -10,24 +10,24 @@ const enemyAiSystem = (entities) => {
       if (playerEntity) {
         if (
           e.components.positionX.value <
-          playerEntity.components.positionX.value - 50
+          playerEntity.components.positionX.value - 30
         ) {
           e.components.positionX.value += e.components.speed.value;
         } else if (
           e.components.positionX.value >
-          playerEntity.components.positionX.value + 50
+          playerEntity.components.positionX.value + 30
         ) {
           e.components.positionX.value -= e.components.speed.value;
         }
 
         if (
           e.components.positionY.value <
-          playerEntity.components.positionY.value - 10
+          playerEntity.components.positionY.value - 50
         ) {
           e.components.positionY.value += e.components.speed.value;
         } else if (
           e.components.positionY.value >
-          playerEntity.components.positionY.value + 10
+          playerEntity.components.positionY.value + 50
         ) {
           e.components.positionY.value -= e.components.speed.value;
         }
