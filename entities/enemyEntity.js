@@ -13,6 +13,8 @@ const enemy = new Entity()
   .addComponents(new Component("down", false))
   .addComponents(new Component("jump", false))
   .addComponents(new Component("attackCooldown", 0))
-  .addComponents(new Component("maxHealth", enemyHealth))
+  .addComponents(new Component("health", enemyHealth))
   .addComponents(new Component("speed", 1.7))
-  .addComponents(new Component("isAttacking", false));
+  .addComponents(new Component("isAttacking", false))
+  .addComponents(new Component("spriteState", "idle"))
+  .addComponents(new Component("spriteTimer", 0));

@@ -5,6 +5,8 @@
 
 //Game settings
 let fps = 60;
+// How many frames an attack/kick animation plays for.
+let attackFrames = 18;
 
 // Entities
 const entities = [];
@@ -22,6 +24,7 @@ systems.push(renderingSystem);
 systems.push(userInputSystem);
 systems.push(movementSystem);
 systems.push(enemyAiSystem);
+systems.push(collisionSystem);
 systems.push(combatSystem);
 
 //Game loop
@@ -49,11 +52,18 @@ const restartGame = () => {
 
   player.components.positionX.value = positionX;
   player.components.positionY.value = positionY;
-  player.components.maxHealth.value = health;
+  player.components.health.value = health;
+  player.components.spriteState.value = "idle";
+  player.components.spriteTimer.value = 0;
+  player.components.jump.value = false;
+  player.components.velocityY.value = 0;
+  player.components.groundY.value = null;
 
   enemy.components.positionX.value = enemyPositionX;
   enemy.components.positionY.value = enemyPositionY;
-  enemy.components.maxHealth.value = enemyHealth;
+  enemy.components.health.value = enemyHealth;
+  enemy.components.spriteState.value = "idle";
+  enemy.components.spriteTimer.value = 0;
 
   document.getElementById("game-over-screen").style.display = "none";
   document.getElementById("startGame").style.display = "block";

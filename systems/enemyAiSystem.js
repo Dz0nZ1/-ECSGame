@@ -7,15 +7,23 @@ const enemyAiSystem = (entities) => {
         (entity) => entity.components.name.value === "player"
       );
 
+      // Advance the attack animation timer; revert to idle when it ends.
+      if (e.components.spriteTimer.value > 0) {
+        e.components.spriteTimer.value -= 1;
+        if (e.components.spriteTimer.value <= 0) {
+          e.components.spriteState.value = "idle";
+        }
+      }
+
       if (playerEntity) {
         if (
           e.components.positionX.value <
-          playerEntity.components.positionX.value - 30
+          playerEntity.components.positionX.value - 85
         ) {
           e.components.positionX.value += e.components.speed.value;
         } else if (
           e.components.positionX.value >
-          playerEntity.components.positionX.value + 30
+          playerEntity.components.positionX.value + 85
         ) {
           e.components.positionX.value -= e.components.speed.value;
         }
@@ -46,12 +54,13 @@ const enemyAiSystem = (entities) => {
         );
 
         e.components.isAttacking.value =
-          distance < 50 && !e.components.isAttacking.value ? true : false;
-      }
+          distance < 100 && !e.components.isAttacking.value ? true : false;
 
-      enemyImage.src = e.components.isAttacking.value
-        ? "./images/EnemyAttack.png"
-        : "./images/Enemy.png";
+        if (e.components.isAttacking.value) {
+          e.components.spriteState.value = "attack";
+          e.components.spriteTimer.value = attackFrames;
+        }
+      }
     }
 
     newEntities.push(e);

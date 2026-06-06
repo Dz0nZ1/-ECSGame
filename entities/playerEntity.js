@@ -13,7 +13,11 @@ const player = new Entity()
   .addComponents(new Component("right", false))
   .addComponents(new Component("down", false))
   .addComponents(new Component("jump", false))
+  .addComponents(new Component("velocityY", 0))
+  .addComponents(new Component("groundY", null))
   .addComponents(new Component("kick", false))
   .addComponents(new Component("attackCooldown", 0))
-  .addComponents(new Component("maxHealth", health))
-  .addComponents(new Component("isAttacking", false));
+  .addComponents(new Component("health", health))
+  .addComponents(new Component("isAttacking", false))
+  .addComponents(new Component("spriteState", "idle"))
+  .addComponents(new Component("spriteTimer", 0));

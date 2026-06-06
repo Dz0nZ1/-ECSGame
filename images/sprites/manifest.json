@@ -1,0 +1,11 @@
+{
+  "cellW": 106,
+  "cellH": 90,
+  "frames": {
+    "idle": 10,
+    "walk": 11,
+    "punch": 5,
+    "kick": 5,
+    "jump": 1
+  }
+}

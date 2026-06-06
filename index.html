@@ -4,52 +4,270 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fighting game</title>
-  </head>
-  <body style="background-color: black">
-    <div
-      style="
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        min-height: 100vh;
+        font-family: "Segoe UI", system-ui, Arial, sans-serif;
+        background: radial-gradient(circle at 50% 0%, #2a2a4a 0%, #12121f 60%, #0a0a12 100%);
+        color: #f3f3fa;
+        overflow: hidden;
+      }
+
+      /* ---- Title ---- */
+      .game-title {
+        position: fixed;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        background: linear-gradient(180deg, #ffd34d, #ff8a3d);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+        z-index: 30;
+        pointer-events: none;
+      }
+
+      /* ---- HUD / health bars ---- */
+      .hud {
+        position: fixed;
+        top: 56px;
+        left: 0;
+        right: 0;
         display: flex;
-        flex-direction: column;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 0 40px;
+        z-index: 30;
+      }
+
+      .fighter {
+        width: 42%;
+      }
+
+      .fighter .name {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        opacity: 0.9;
+      }
+
+      .fighter.enemy {
+        text-align: right;
+      }
+
+      .bar {
+        height: 26px;
+        background: rgba(0, 0, 0, 0.55);
+        border: 2px solid rgba(255, 255, 255, 0.18);
+        border-radius: 6px;
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+        display: flex;
+        overflow: hidden;
+      }
+
+      .fighter.enemy .bar {
+        justify-content: flex-end;
+      }
+
+      .fill {
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(90deg, #2fe430, #9dff5c);
+        border-radius: 3px;
+        transition: width 0.12s linear;
+      }
+
+      .hp {
+        margin-top: 4px;
+        font-size: 13px;
+        letter-spacing: 1px;
+        opacity: 0.85;
+      }
+
+      .vs {
+        align-self: center;
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: #ff5e5e;
+        text-shadow: 0 0 12px rgba(255, 94, 94, 0.6);
+      }
+
+      /* ---- Buttons ---- */
+      .btn {
+        font-family: inherit;
+        font-weight: 800;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        color: #16210f;
+        transition: transform 0.08s ease, box-shadow 0.15s ease, opacity 0.2s;
+      }
+
+      .btn:active {
+        transform: translateY(2px);
+      }
+
+      #startGame {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 18px 46px;
+        font-size: 26px;
+        background: linear-gradient(180deg, #6dff5c, #28c93f);
+        box-shadow: 0 8px 0 #138a2a, 0 12px 24px rgba(0, 0, 0, 0.5);
+        z-index: 40;
+      }
+
+      #startGame:hover {
+        box-shadow: 0 8px 0 #138a2a, 0 14px 30px rgba(40, 201, 63, 0.5);
+      }
+
+      #startGame:disabled {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* ---- Game over modal ---- */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
         align-items: center;
-        margin-top: 50px;
-      "
-    >
-      <button
-        id="startGame"
-        onclick="startGame()"
-        style="
-          font-size: 30px;
-          background-color: green;
-          color: white;
-          cursor: pointer;
-        "
-      >
-        Start Game
-      </button>
-      <div
-        id="health-info"
-        style="display: flex; justify-content: space-between; width: 75%"
-      >
-        <p style="color: aliceblue; font-size: 20px">
-          Player Health:
-          <span id="player-health" style="font-size: 30px">100</span>
-        </p>
-        <p style="color: aliceblue; font-size: 20px">
-          Enemy Health:
-          <span id="enemy-health" style="font-size: 30px">100</span>
-        </p>
+        justify-content: center;
+        background: rgba(8, 8, 16, 0.72);
+        backdrop-filter: blur(3px);
+        z-index: 50;
+      }
+
+      .modal {
+        text-align: center;
+        padding: 40px 56px;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #20203a, #14141f);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      }
+
+      .modal h2 {
+        font-size: 26px;
+        letter-spacing: 2px;
+        margin-bottom: 22px;
+      }
+
+      .btn-restart {
+        padding: 14px 38px;
+        font-size: 18px;
+        background: linear-gradient(180deg, #ffd34d, #ffae20);
+        box-shadow: 0 6px 0 #c9871a, 0 10px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      /* ---- Controls panel ---- */
+      .controls {
+        position: fixed;
+        left: 24px;
+        bottom: 24px;
+        padding: 16px 20px;
+        background: rgba(20, 20, 35, 0.78);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        z-index: 30;
+      }
+
+      .controls-title {
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #ffd34d;
+        margin-bottom: 10px;
+      }
+
+      .controls ul {
+        list-style: none;
+        display: grid;
+        gap: 8px;
+      }
+
+      .controls li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: #d8d8e6;
+      }
+
+      .key {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 26px;
+        height: 26px;
+        padding: 0 7px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #14141f;
+        background: linear-gradient(180deg, #ffffff, #c8c8d4);
+        border-radius: 6px;
+        box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-title">Fighting Game</div>
+
+    <div class="hud" id="health-info">
+      <div class="fighter player">
+        <div class="name">Player</div>
+        <div class="bar"><div class="fill" id="player-health-bar"></div></div>
+        <div class="hp">HP <span id="player-health">100</span></div>
       </div>
-      <div id="game-over-screen" style="display: none">
-        <div style="display: flex; flex-direction: column; align-items: center">
-          <h2 style="color: aliceblue" id="winner">Game Over!</h2>
-          <button
-            onclick="restartGame()"
-            style="font-size: 20px; cursor: pointer"
-          >
-            Restart
-          </button>
-        </div>
+
+      <div class="vs">VS</div>
+
+      <div class="fighter enemy">
+        <div class="name">Enemy</div>
+        <div class="bar"><div class="fill" id="enemy-health-bar"></div></div>
+        <div class="hp"><span id="enemy-health">100</span> HP</div>
       </div>
+    </div>
+
+    <button id="startGame" class="btn" onclick="startGame()">Start</button>
+
+    <div id="game-over-screen" class="overlay" style="display: none">
+      <div class="modal">
+        <h2 id="winner">Game Over!</h2>
+        <button class="btn btn-restart" onclick="restartGame()">Restart</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="controls-title">Controls</div>
+      <ul>
+        <li><span class="key">&#8592;</span><span class="key">&#8594;</span> Move</li>
+        <li><span class="key">&#8593;</span><span class="key">&#8595;</span> Up / Down</li>
+        <li><span class="key">Space</span> Jump</li>
+        <li><span class="key">A</span> Punch</li>
+        <li><span class="key">S</span> Kick</li>
+      </ul>
     </div>
 
     <!-- Components -->
@@ -64,18 +282,12 @@
     <script src="systems/combatSystem.js"></script>
     <script src="systems/endGameSystem.js"></script>
     <script src="systems/enemyAiSystem.js"></script>
+    <script src="systems/collisionSystem.js"></script>
     <script src="systems/movementSystem.js"></script>
     <script src="systems/renderingSystem.js"></script>
     <script src="systems/statsSystem.js"></script>
 
     <!-- Main -->
     <script src="main.js"></script>
-    <div style="font-size: 25px; color: white">Commands</div>
-    <ul style="text-decoration: none">
-      <li style="font-size: 15px; color: white">Use arrow keys to move</li>
-      <li style="font-size: 15px; color: white">Press Space to jump</li>
-      <li style="font-size: 15px; color: white">Press A to punch</li>
-      <li style="font-size: 15px; color: white">Press S to kick</li>
-    </ul>
   </body>
 </html>
