@@ -70,6 +70,7 @@ const movementSystem = (enteties) => {
 const userInputSystem = (function inputSystem() {
   let downEvents = [];
   let upEvents = [];
+  let prevDown = [];
   function handleKeyDown(event) {
     downEvents.push(event.keyCode);
     downEvents = [...new Set(downEvents)];
@@ -81,6 +82,7 @@ const userInputSystem = (function inputSystem() {
   window.addEventListener("keydown", handleKeyDown);
   window.addEventListener("keyup", handleKeyUp);
   return (entities) => {
+    const justPressed = downEvents.filter((k) => !prevDown.includes(k));
     let newEntities = [];
     entities.map((e) => {
       //up 38
@@ -124,12 +126,12 @@ const userInputSystem = (function inputSystem() {
         }
       }
 
-      if (downEvents.includes(65) && e.components.isAttacking !== undefined) {
+      if (justPressed.includes(65) && e.components.isAttacking !== undefined) {
         if (e.components.name.value === "player") {
           e.components.isAttacking.value = true;
         }
       }
-      if (downEvents.includes(83) && e.components.kick !== undefined) {
+      if (justPressed.includes(83) && e.components.kick !== undefined) {
         if (e.components.name.value === "player") {
           e.components.kick.value = true;
         }
@@ -138,6 +140,7 @@ const userInputSystem = (function inputSystem() {
       newEntities.push(e);
     });
     downEvents = downEvents.filter((value) => !upEvents.includes(value));
+    prevDown = [...downEvents];
     upEvents = [];
     return newEntities;
   };

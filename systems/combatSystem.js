@@ -54,10 +54,12 @@ const combatSystem = (entities) => {
 
         // Trigger the matching animation whenever the player acts,
         // even if the hit misses.
-        if (isAttacking) {
-          playAnimation(entity, "attack");
-        } else if (isKicking) {
-          playAnimation(entity, "kick");
+        if (entity.components.spriteTimer.value <= 0) {
+          if (isAttacking) {
+            playAnimation(entity, "attack");
+          } else if (isKicking) {
+            playAnimation(entity, "kick");
+          }
         }
 
         entity.components.attackCooldown.value = Math.max(
