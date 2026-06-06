@@ -126,6 +126,12 @@ const userInputSystem = (function inputSystem() {
         }
       }
 
+      if (downEvents.includes(81) && e.components.block !== undefined) {
+        if (e.components.name.value === "player") {
+          e.components.block.value = true;
+        }
+      }
+
       if (justPressed.includes(65) && e.components.isAttacking !== undefined) {
         if (e.components.name.value === "player") {
           e.components.isAttacking.value = true;

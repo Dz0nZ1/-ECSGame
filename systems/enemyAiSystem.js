@@ -7,14 +7,6 @@ const enemyAiSystem = (entities) => {
         (entity) => entity.components.name.value === "player"
       );
 
-      // Advance the attack animation timer; revert to idle when it ends.
-      if (e.components.spriteTimer.value > 0) {
-        e.components.spriteTimer.value -= 1;
-        if (e.components.spriteTimer.value <= 0) {
-          e.components.spriteState.value = "idle";
-        }
-      }
-
       if (playerEntity) {
         if (
           e.components.positionX.value <
@@ -53,13 +45,7 @@ const enemyAiSystem = (entities) => {
             )
         );
 
-        e.components.isAttacking.value =
-          distance < 100 && !e.components.isAttacking.value ? true : false;
-
-        if (e.components.isAttacking.value) {
-          e.components.spriteState.value = "attack";
-          e.components.spriteTimer.value = attackFrames;
-        }
+        e.components.isAttacking.value = distance < 100;
       }
     }
 

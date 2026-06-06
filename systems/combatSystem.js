@@ -14,7 +14,9 @@ const combatSystem = (entities) => {
     );
   };
 
-  // Advance the attack/kick animation timer; revert to idle when it ends.
+  // Hit animation lasts longer than attack animation so the knockdown is visible.
+  const hitFrames = Math.round(fps * 0.6);
+
   const tickAnimation = (entity) => {
     if (entity.components.spriteTimer.value > 0) {
       entity.components.spriteTimer.value -= 1;
@@ -27,6 +29,11 @@ const combatSystem = (entities) => {
   const playAnimation = (entity, state) => {
     entity.components.spriteState.value = state;
     entity.components.spriteTimer.value = attackFrames;
+  };
+
+  const isKnockedDown = (entity) => {
+    const ss = entity.components.spriteState.value;
+    return ss === "hit" || ss === "block";
   };
 
   const newEntities = entities.map((entity) => {
@@ -45,16 +52,18 @@ const combatSystem = (entities) => {
         if (
           distance < 100 &&
           (isAttacking || isKicking) &&
-          entity.components.attackCooldown.value <= 0
+          entity.components.attackCooldown.value <= 0 &&
+          !isKnockedDown(entity) &&
+          !isKnockedDown(enemyEntity)
         ) {
           enemyEntity.components.health.value -=
             Math.floor(Math.random() * 5) + 1;
           entity.components.attackCooldown.value = fps / 2;
+          enemyEntity.components.spriteState.value = "hit";
+          enemyEntity.components.spriteTimer.value = hitFrames;
         }
 
-        // Trigger the matching animation whenever the player acts,
-        // even if the hit misses.
-        if (entity.components.spriteTimer.value <= 0) {
+        if (!isKnockedDown(entity) && entity.components.spriteTimer.value <= 0) {
           if (isAttacking) {
             playAnimation(entity, "attack");
           } else if (isKicking) {
@@ -68,12 +77,14 @@ const combatSystem = (entities) => {
         );
       }
 
-      // Consume the action inputs for this frame.
       entity.components.isAttacking.value = false;
       entity.components.kick.value = false;
+      entity.components.block.value = false;
 
       return entity;
     } else if (entity.components.name.value === "enemy") {
+      tickAnimation(entity);
+
       const playerEntity = entities.find(
         (e) => e.components.name.value === "player"
       );
@@ -81,11 +92,23 @@ const combatSystem = (entities) => {
       if (playerEntity) {
         const distance = calculateDistance(entity, playerEntity);
 
-        if (distance < 100 && entity.components.attackCooldown.value <= 0) {
-          playerEntity.components.health.value -=
-            Math.floor(Math.random() * 4) + 1;
+        if (
+          distance < 100 &&
+          entity.components.attackCooldown.value <= 0 &&
+          !isKnockedDown(entity)
+        ) {
+          const rawDamage = Math.floor(Math.random() * 4) + 1;
+          const isBlocking = playerEntity.components.block.value;
+          playerEntity.components.health.value -= isBlocking
+            ? Math.max(1, Math.floor(rawDamage / 2))
+            : rawDamage;
+          playerEntity.components.spriteState.value = isBlocking ? "block" : "hit";
+          playerEntity.components.spriteTimer.value = hitFrames;
           entity.components.attackCooldown.value =
             fps / 1.5 + Math.random() * (2.5 - 1.5);
+
+          entity.components.spriteState.value = "attack";
+          entity.components.spriteTimer.value = attackFrames;
         }
 
         entity.components.attackCooldown.value = Math.max(

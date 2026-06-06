@@ -55,6 +55,7 @@ const restartGame = () => {
   player.components.health.value = health;
   player.components.spriteState.value = "idle";
   player.components.spriteTimer.value = 0;
+  player.components.block.value = false;
   player.components.jump.value = false;
   player.components.velocityY.value = 0;
   player.components.groundY.value = null;

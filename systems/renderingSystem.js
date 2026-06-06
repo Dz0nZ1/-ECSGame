@@ -2,7 +2,7 @@
 const SPRITES = {
   cellW: 106,
   cellH: 90,
-  counts: { idle: 10, walk: 11, punch: 5, kick: 1, jump: 1 },
+  counts: { idle: 10, walk: 11, punch: 5, kick: 1, jump: 1, hit: 1, block: 1 },
 };
 
 const sheets = { player: {}, enemy: {} };
@@ -17,6 +17,10 @@ function loadSheet(group, state, src) {
   loadSheet("player", state, `./images/sprites/p_${state}.png`);
   loadSheet("enemy", state, `./images/sprites/e_${state}.png`);
 });
+loadSheet("player", "hit", "./images/sprites/p_hit.png");
+loadSheet("player", "block", "./images/sprites/p_block.png");
+loadSheet("enemy", "hit", "./images/sprites/e_hit.png");
+loadSheet("enemy", "block", "./images/sprites/e_block.png");
 
 // Rendering system
 const renderingSystem = (function graphicsSystem() {
@@ -116,6 +120,12 @@ const renderingSystem = (function graphicsSystem() {
       } else if (ss === "kick") {
         state = "kick";
         idx = attackFrameIndex(e, "kick");
+      } else if (ss === "hit") {
+        state = "hit";
+        idx = 0;
+      } else if (ss === "block") {
+        state = "block";
+        idx = 0;
       } else if (moving) {
         state = "walk";
         idx = Math.floor(frame / 5 + phase) % SPRITES.counts.walk;

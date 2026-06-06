@@ -20,4 +20,5 @@ const player = new Entity()
   .addComponents(new Component("health", health))
   .addComponents(new Component("isAttacking", false))
   .addComponents(new Component("spriteState", "idle"))
-  .addComponents(new Component("spriteTimer", 0));
+  .addComponents(new Component("spriteTimer", 0))
+  .addComponents(new Component("block", false));
