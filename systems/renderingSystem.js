@@ -100,6 +100,10 @@ const renderingSystem = (function graphicsSystem() {
       const y = e.components.positionY.value;
 
       const airborne = e.components.jump !== undefined && e.components.jump.value;
+      // Whether the fighter is currently holding guard (input flag, not a
+      // spriteState). Lets us show a guard stance the moment Q is held, instead
+      // of only when a hit is actually blocked.
+      const guarding = e.components.block !== undefined && e.components.block.value;
       const ss = e.components.spriteState
         ? e.components.spriteState.value
         : "idle";
@@ -124,6 +128,10 @@ const renderingSystem = (function graphicsSystem() {
         state = "hit";
         idx = 0;
       } else if (ss === "block") {
+        state = "block";
+        idx = 0;
+      } else if (guarding) {
+        // Held guard stance: visible feedback while Q is down, even with no hit.
         state = "block";
         idx = 0;
       } else if (moving) {

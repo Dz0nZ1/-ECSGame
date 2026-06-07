@@ -16,6 +16,8 @@ A 2D browser fighting game built with **vanilla JavaScript** using the **Entity 
 
 Both fighters start with **100 HP**. The goal is to reduce the enemy's health to zero before your own runs out. The game ends when either fighter is knocked out, and a restart button is shown.
 
+The enemy is driven by a **human-like AI** that manages spacing, mixes punches and kicks, blocks reactively, and paces its attacks instead of mashing — see [Enemy AI](#enemy-ai). During a match an always-available **Restart** and a **Pause / Resume** button sit in the top-right corner.
+
 ---
 
 ## Animations
@@ -76,7 +78,7 @@ The game loop runs at 60 FPS via `setInterval` and pipes entities through all sy
 | `renderingSystem` | Draws sprites to canvas, resolves animation frames |
 | `userInputSystem` | Maps keyboard events to component flags |
 | `movementSystem` | Applies velocity, gravity, jump arc, playfield clamp |
-| `enemyAiSystem` | Moves enemy toward player, sets `isAttacking` flag |
+| `enemyAiSystem` | Drives the enemy: spacing, attack/kick/block intent flags |
 | `collisionSystem` | Prevents fighters from overlapping |
 | `combatSystem` | Resolves damage, block, and all animation state changes |
 
@@ -85,7 +87,17 @@ The game loop runs at 60 FPS via `setInterval` and pipes entities through all sy
 | Entity | Key Components |
 |--------|---------------|
 | `player` | `positionX/Y`, `health`, `isAttacking`, `kick`, `block`, `spriteState`, `spriteTimer`, `attackCooldown`, `jump` |
-| `enemy` | `positionX/Y`, `health`, `isAttacking`, `spriteState`, `spriteTimer`, `attackCooldown`, `speed` |
+| `enemy` | `positionX/Y`, `health`, `isAttacking`, `kick`, `block`, `spriteState`, `spriteTimer`, `attackCooldown`, `speed` |
+
+### Enemy AI
+
+The enemy is a closure-based decision machine (in `enemyAiSystem.js`) tuned to feel like a real opponent rather than a punching bag:
+
+- **Spacing / footsies** — picks an *intent* (`advance` / `hold` / `retreat` / `strafe`) on a randomized timer, weighted by distance, so it threatens, baits, and repositions instead of charging straight in.
+- **Mixed offense** — throws punches and kicks at random, with deliberate pauses between swings (no mashing).
+- **Reactive defense** — raises a block when it reads the player's swing, halving the incoming hit.
+
+Combat is fully symmetric: the enemy can block your attacks (and take reduced damage) just as you can block its.
 
 ### Animation States
 

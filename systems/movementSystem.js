@@ -126,10 +126,11 @@ const userInputSystem = (function inputSystem() {
         }
       }
 
-      if (downEvents.includes(81) && e.components.block !== undefined) {
-        if (e.components.name.value === "player") {
-          e.components.block.value = true;
-        }
+      if (e.components.block !== undefined && e.components.name.value === "player") {
+        // Block reflects whether Q is held *right now*. Resetting it here (before
+        // combatSystem runs) instead of inside combatSystem avoids the player's
+        // branch clobbering the flag before the enemy's branch reads it.
+        e.components.block.value = downEvents.includes(81);
       }
 
       if (justPressed.includes(65) && e.components.isAttacking !== undefined) {

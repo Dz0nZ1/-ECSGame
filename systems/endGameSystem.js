@@ -8,9 +8,11 @@ const endGameSystem = (entities) => {
 
   if (playerHealth <= 0 || enemyHealth <= 0) {
     clearInterval(gameInterval);
-    document.getElementById("game-over-screen").style.display = "block";
+    document.getElementById("game-over-screen").style.display = "flex";
     document.getElementById("startGame").style.display = "none";
     document.getElementById("health-info").style.display = "none";
+    document.getElementById("ingameButtons").style.display = "none";
+    document.getElementById("pause-screen").style.display = "none";
 
     const winner = document.getElementById("winner");
 

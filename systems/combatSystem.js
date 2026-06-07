@@ -56,10 +56,16 @@ const combatSystem = (entities) => {
           !isKnockedDown(entity) &&
           !isKnockedDown(enemyEntity)
         ) {
-          enemyEntity.components.health.value -=
-            Math.floor(Math.random() * 5) + 1;
+          const rawDamage = Math.floor(Math.random() * 5) + 1;
+          // The enemy can guard too — a held block halves the incoming hit.
+          const enemyBlocking = enemyEntity.components.block.value;
+          enemyEntity.components.health.value -= enemyBlocking
+            ? Math.max(1, Math.floor(rawDamage / 2))
+            : rawDamage;
           entity.components.attackCooldown.value = fps / 2;
-          enemyEntity.components.spriteState.value = "hit";
+          enemyEntity.components.spriteState.value = enemyBlocking
+            ? "block"
+            : "hit";
           enemyEntity.components.spriteTimer.value = hitFrames;
         }
 
@@ -79,7 +85,10 @@ const combatSystem = (entities) => {
 
       entity.components.isAttacking.value = false;
       entity.components.kick.value = false;
-      entity.components.block.value = false;
+      // NOTE: block is intentionally NOT reset here. The enemy branch (processed
+      // after the player in this same map) reads playerEntity.block, so clearing
+      // it here would hide the block before the enemy ever sees it. The flag is
+      // managed each frame by userInputSystem instead.
 
       return entity;
     } else if (entity.components.name.value === "enemy") {
@@ -92,12 +101,24 @@ const combatSystem = (entities) => {
       if (playerEntity) {
         const distance = calculateDistance(entity, playerEntity);
 
+        // The AI decides *when* to swing (isAttacking / kick); combat only
+        // resolves the hit. It also can't strike while holding its own guard.
+        const enemyKicking = entity.components.kick.value;
+        const enemyWantsAttack =
+          entity.components.isAttacking.value || enemyKicking;
+
         if (
           distance < 100 &&
+          enemyWantsAttack &&
+          !entity.components.block.value &&
           entity.components.attackCooldown.value <= 0 &&
-          !isKnockedDown(entity)
+          !isKnockedDown(entity) &&
+          !isKnockedDown(playerEntity)
         ) {
-          const rawDamage = Math.floor(Math.random() * 4) + 1;
+          // Kicks hit a little harder than punches.
+          const rawDamage = enemyKicking
+            ? Math.floor(Math.random() * 5) + 2
+            : Math.floor(Math.random() * 4) + 1;
           const isBlocking = playerEntity.components.block.value;
           playerEntity.components.health.value -= isBlocking
             ? Math.max(1, Math.floor(rawDamage / 2))
@@ -107,8 +128,17 @@ const combatSystem = (entities) => {
           entity.components.attackCooldown.value =
             fps / 1.5 + Math.random() * (2.5 - 1.5);
 
-          entity.components.spriteState.value = "attack";
+          entity.components.spriteState.value = enemyKicking ? "kick" : "attack";
           entity.components.spriteTimer.value = attackFrames;
+        }
+
+        // Animate the swing even on a whiff, mirroring the player's branch.
+        if (!isKnockedDown(entity) && entity.components.spriteTimer.value <= 0) {
+          if (entity.components.isAttacking.value) {
+            playAnimation(entity, "attack");
+          } else if (enemyKicking) {
+            playAnimation(entity, "kick");
+          }
         }
 
         entity.components.attackCooldown.value = Math.max(

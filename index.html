@@ -19,10 +19,20 @@
         overflow: hidden;
       }
 
+      /* Subtle vignette over the whole scene for arcade depth. */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(circle at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+        z-index: 20;
+      }
+
       /* ---- Title ---- */
       .game-title {
         position: fixed;
-        top: 14px;
+        top: 12px;
         left: 50%;
         transform: translateX(-50%);
         font-size: 26px;
@@ -33,15 +43,31 @@
         -webkit-background-clip: text;
         background-clip: text;
         -webkit-text-fill-color: transparent;
-        text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+        filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35));
+        animation: titleGlow 2.6s ease-in-out infinite;
         z-index: 30;
         pointer-events: none;
+        text-align: center;
+      }
+
+      .game-title small {
+        display: block;
+        margin-top: 3px;
+        font-size: 10px;
+        letter-spacing: 5px;
+        -webkit-text-fill-color: rgba(243, 243, 250, 0.45);
+        color: rgba(243, 243, 250, 0.45);
+      }
+
+      @keyframes titleGlow {
+        0%, 100% { filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35)) drop-shadow(0 0 6px rgba(255, 138, 61, 0.25)); }
+        50% { filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35)) drop-shadow(0 0 16px rgba(255, 180, 80, 0.6)); }
       }
 
       /* ---- HUD / health bars ---- */
       .hud {
         position: fixed;
-        top: 56px;
+        top: 58px;
         left: 0;
         right: 0;
         display: flex;
@@ -70,6 +96,7 @@
       }
 
       .bar {
+        position: relative;
         height: 26px;
         background: rgba(0, 0, 0, 0.55);
         border: 2px solid rgba(255, 255, 255, 0.18);
@@ -84,11 +111,22 @@
       }
 
       .fill {
+        position: relative;
         height: 100%;
         width: 100%;
         background: linear-gradient(90deg, #2fe430, #9dff5c);
         border-radius: 3px;
-        transition: width 0.12s linear;
+        transition: width 0.12s linear, background 0.2s linear;
+      }
+
+      /* Glossy sheen across the top of each bar. */
+      .bar::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 50% 0;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.25), transparent);
+        pointer-events: none;
+        z-index: 1;
       }
 
       .hp {
@@ -105,6 +143,12 @@
         letter-spacing: 2px;
         color: #ff5e5e;
         text-shadow: 0 0 12px rgba(255, 94, 94, 0.6);
+        animation: vsPulse 1.4s ease-in-out infinite;
+      }
+
+      @keyframes vsPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.12); }
       }
 
       /* ---- Buttons ---- */
@@ -117,7 +161,7 @@
         border-radius: 10px;
         cursor: pointer;
         color: #16210f;
-        transition: transform 0.08s ease, box-shadow 0.15s ease, opacity 0.2s;
+        transition: transform 0.08s ease, box-shadow 0.15s ease, opacity 0.2s, filter 0.15s ease;
       }
 
       .btn:active {
@@ -138,11 +182,66 @@
 
       #startGame:hover {
         box-shadow: 0 8px 0 #138a2a, 0 14px 30px rgba(40, 201, 63, 0.5);
+        filter: brightness(1.05);
       }
 
       #startGame:disabled {
         opacity: 0;
         pointer-events: none;
+      }
+
+      /* In-game button bar (pause + restart), top-right, only while playing. */
+      .ingame-buttons {
+        position: fixed;
+        top: 16px;
+        right: 24px;
+        display: none;
+        gap: 10px;
+        z-index: 46; /* above the pause overlay so Resume stays clickable */
+      }
+
+      .btn-ingame {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 16px;
+        font-size: 12px;
+        background: linear-gradient(180deg, #3a3a5e, #23233c);
+        color: #f3f3fa;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: 0 4px 0 rgba(0, 0, 0, 0.4), 0 8px 18px rgba(0, 0, 0, 0.4);
+      }
+
+      .btn-ingame:hover {
+        filter: brightness(1.2);
+        box-shadow: 0 4px 0 rgba(0, 0, 0, 0.4), 0 8px 22px rgba(255, 180, 80, 0.3);
+      }
+
+      .btn-ingame .icon {
+        font-size: 15px;
+        line-height: 1;
+      }
+
+      /* ---- Pause overlay ---- */
+      .pause-overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(8, 8, 16, 0.55);
+        backdrop-filter: blur(2px);
+        z-index: 45;
+        pointer-events: none; /* purely decorative — let clicks reach buttons */
+      }
+
+      .pause-overlay .paused-text {
+        font-size: 40px;
+        font-weight: 900;
+        letter-spacing: 10px;
+        text-transform: uppercase;
+        color: #ffd34d;
+        text-shadow: 0 0 20px rgba(255, 180, 80, 0.5);
       }
 
       /* ---- Game over modal ---- */
@@ -164,6 +263,12 @@
         background: linear-gradient(180deg, #20203a, #14141f);
         border: 1px solid rgba(255, 255, 255, 0.12);
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        animation: modalPop 0.25s ease-out;
+      }
+
+      @keyframes modalPop {
+        from { transform: scale(0.85); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
       }
 
       .modal h2 {
@@ -177,6 +282,10 @@
         font-size: 18px;
         background: linear-gradient(180deg, #ffd34d, #ffae20);
         box-shadow: 0 6px 0 #c9871a, 0 10px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      .btn-restart:hover {
+        filter: brightness(1.05);
       }
 
       /* ---- Controls panel ---- */
@@ -232,7 +341,7 @@
     </style>
   </head>
   <body>
-    <div class="game-title">Fighting Game</div>
+    <div class="game-title">Fighting Game<small>ECS Arena</small></div>
 
     <div class="hud" id="health-info">
       <div class="fighter player">
@@ -251,6 +360,19 @@
     </div>
 
     <button id="startGame" class="btn" onclick="startGame()">Start</button>
+
+    <div id="ingameButtons" class="ingame-buttons">
+      <button id="pauseGame" class="btn btn-ingame" onclick="togglePause()">
+        <span class="icon">&#10073;&#10073;</span> <span id="pauseLabel">Pause</span>
+      </button>
+      <button id="inGameRestart" class="btn btn-ingame" onclick="inGameRestart()">
+        <span class="icon">&#8635;</span> Restart
+      </button>
+    </div>
+
+    <div id="pause-screen" class="pause-overlay">
+      <div class="paused-text">Paused</div>
+    </div>
 
     <div id="game-over-screen" class="overlay" style="display: none">
       <div class="modal">
