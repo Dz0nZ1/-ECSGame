@@ -81,7 +81,8 @@ const userInputSystem = (function inputSystem() {
   }
   window.addEventListener("keydown", handleKeyDown);
   window.addEventListener("keyup", handleKeyUp);
-  return (entities) => {
+
+  const system = (entities) => {
     const justPressed = downEvents.filter((k) => !prevDown.includes(k));
     let newEntities = [];
     entities.map((e) => {
@@ -119,8 +120,8 @@ const userInputSystem = (function inputSystem() {
           }
         }
       }
-      //jump 32
-      if (downEvents.includes(32) && !e.components.jump.value) {
+      //jump 32 — justPressed so holding Space doesn't auto-bounce on landing
+      if (justPressed.includes(32) && !e.components.jump.value) {
         if (e.components.name.value === "player") {
           e.components.jump.value = true;
         }
@@ -151,4 +152,14 @@ const userInputSystem = (function inputSystem() {
     upEvents = [];
     return newEntities;
   };
+
+  // Drop any buffered keys — called on pause/round transitions so a key held
+  // across the gap can't fire a stray action when play resumes.
+  system.clearBuffer = () => {
+    downEvents = [];
+    upEvents = [];
+    prevDown = [];
+  };
+
+  return system;
 })();

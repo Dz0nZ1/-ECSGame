@@ -44,7 +44,49 @@ const renderingSystem = (function graphicsSystem() {
   const BOX = 150; // the logical character box used by the rest of the game
 
   const drawBackground = () => {
-    ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+    // Slight overscan so the screen-shake translate never exposes the edges.
+    ctx.drawImage(background, -12, -12, canvas.width + 24, canvas.height + 24);
+  };
+
+  // Draw and decay the transient hit effects (sparks + damage numbers).
+  const drawEffects = () => {
+    const fx = window.fx || [];
+    for (let i = fx.length - 1; i >= 0; i--) {
+      const p = fx[i];
+      const t = p.life / p.max; // 0 → 1 over the effect's lifetime
+      if (p.type === "spark") {
+        const r = 6 + t * 26;
+        ctx.save();
+        ctx.globalAlpha = 1 - t;
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        for (let a = 0; a < 4; a++) {
+          const ang = (Math.PI / 2) * a + Math.PI / 4;
+          ctx.moveTo(p.x + Math.cos(ang) * r * 0.5, p.y + Math.sin(ang) * r * 0.5);
+          ctx.lineTo(p.x + Math.cos(ang) * r, p.y + Math.sin(ang) * r);
+        }
+        ctx.stroke();
+        ctx.restore();
+      } else if (p.type === "dmg") {
+        ctx.save();
+        ctx.globalAlpha = 1 - t;
+        ctx.fillStyle = p.color;
+        ctx.font = "bold 22px 'Segoe UI', system-ui, Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "rgba(0,0,0,0.7)";
+        const yy = p.y - t * 34;
+        ctx.strokeText(p.text, p.x, yy);
+        ctx.fillText(p.text, p.x, yy);
+        ctx.restore();
+      }
+      p.life++;
+      if (p.life >= p.max) fx.splice(i, 1);
+    }
   };
 
   // Draw one animation cell, scaled to the logical box, bottom-centered,
@@ -86,6 +128,15 @@ const renderingSystem = (function graphicsSystem() {
   return (entities) => {
     frame++;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Screen shake: offset the whole scene by a decaying random amount.
+    ctx.save();
+    if (window.fxShake > 0) {
+      const m = window.fxShake;
+      ctx.translate((Math.random() * 2 - 1) * m, (Math.random() * 2 - 1) * m);
+      window.fxShake = Math.max(0, window.fxShake - 1);
+    }
+
     drawBackground();
 
     const player = entities.find((e) => e.components.name.value === "player");
@@ -152,6 +203,9 @@ const renderingSystem = (function graphicsSystem() {
 
       drawFrame(sheets[name][state], idx, x, y, flip);
     });
+
+    drawEffects();
+    ctx.restore();
 
     return entities;
   };

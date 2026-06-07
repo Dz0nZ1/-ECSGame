@@ -338,6 +338,104 @@
         border-radius: 6px;
         box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
       }
+
+      /* ---- Round pips ---- */
+      .rounds {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .fighter.enemy .rounds {
+        justify-content: flex-end;
+      }
+
+      .pip {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        transition: background 0.2s, box-shadow 0.2s;
+      }
+
+      .pip.won {
+        background: linear-gradient(180deg, #ffd34d, #ff8a3d);
+        box-shadow: 0 0 8px rgba(255, 180, 80, 0.7);
+        border-color: transparent;
+      }
+
+      /* ---- Center column: round timer + VS ---- */
+      .center-col {
+        align-self: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .round-timer {
+        min-width: 48px;
+        text-align: center;
+        font-size: 30px;
+        font-weight: 900;
+        color: #ffffff;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+      }
+
+      /* ---- Start screen difficulty selector ---- */
+      .start-wrap {
+        position: fixed;
+        top: calc(50% + 72px);
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #d8d8e6;
+        z-index: 40;
+      }
+
+      .start-wrap select {
+        font-family: inherit;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: #16210f;
+        background: linear-gradient(180deg, #ffffff, #c8c8d4);
+        border: none;
+        border-radius: 6px;
+        padding: 6px 9px;
+        cursor: pointer;
+      }
+
+      .start-wrap.hidden {
+        display: none;
+      }
+
+      /* ---- Between-rounds banner ---- */
+      .round-banner {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 48;
+        pointer-events: none;
+      }
+
+      .round-banner .banner-text {
+        font-size: 42px;
+        font-weight: 900;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        color: #ffd34d;
+        text-shadow: 0 0 24px rgba(255, 180, 80, 0.55);
+        animation: modalPop 0.3s ease-out;
+      }
     </style>
   </head>
   <body>
@@ -348,18 +446,36 @@
         <div class="name">Player</div>
         <div class="bar"><div class="fill" id="player-health-bar"></div></div>
         <div class="hp">HP <span id="player-health">100</span></div>
+        <div class="rounds" id="player-rounds">
+          <span class="pip"></span><span class="pip"></span>
+        </div>
       </div>
 
-      <div class="vs">VS</div>
+      <div class="center-col">
+        <div class="round-timer" id="round-timer">60</div>
+        <div class="vs">VS</div>
+      </div>
 
       <div class="fighter enemy">
         <div class="name">Enemy</div>
         <div class="bar"><div class="fill" id="enemy-health-bar"></div></div>
         <div class="hp"><span id="enemy-health">100</span> HP</div>
+        <div class="rounds" id="enemy-rounds">
+          <span class="pip"></span><span class="pip"></span>
+        </div>
       </div>
     </div>
 
     <button id="startGame" class="btn" onclick="startGame()">Start</button>
+
+    <div id="start-wrap" class="start-wrap">
+      <label for="difficulty">Difficulty</label>
+      <select id="difficulty">
+        <option value="easy">Easy</option>
+        <option value="normal" selected>Normal</option>
+        <option value="hard">Hard</option>
+      </select>
+    </div>
 
     <div id="ingameButtons" class="ingame-buttons">
       <button id="pauseGame" class="btn btn-ingame" onclick="togglePause()">
@@ -368,10 +484,17 @@
       <button id="inGameRestart" class="btn btn-ingame" onclick="inGameRestart()">
         <span class="icon">&#8635;</span> Restart
       </button>
+      <button id="muteGame" class="btn btn-ingame" onclick="window.SFX && (document.getElementById('muteLabel').innerText = window.SFX.toggleMute() ? 'Unmute' : 'Mute')">
+        <span class="icon">&#119070;</span> <span id="muteLabel">Mute</span>
+      </button>
     </div>
 
     <div id="pause-screen" class="pause-overlay">
       <div class="paused-text">Paused</div>
+    </div>
+
+    <div id="round-banner" class="round-banner">
+      <div class="banner-text">Round won!</div>
     </div>
 
     <div id="game-over-screen" class="overlay" style="display: none">
@@ -390,8 +513,12 @@
         <li><span class="key">A</span> Punch</li>
         <li><span class="key">S</span> Kick</li>
         <li><span class="key">Q</span> Block</li>
+        <li><span class="key">P</span> Pause &nbsp; <span class="key">R</span> Restart &nbsp; <span class="key">M</span> Mute</li>
       </ul>
     </div>
+
+    <!-- Audio (synthesized SFX) -->
+    <script src="audio.js"></script>
 
     <!-- Components -->
     <script src="components/components.js"></script>
@@ -403,7 +530,7 @@
 
     <!-- Systems -->
     <script src="systems/combatSystem.js"></script>
-    <script src="systems/endGameSystem.js"></script>
+    <script src="systems/roundSystem.js"></script>
     <script src="systems/enemyAiSystem.js"></script>
     <script src="systems/collisionSystem.js"></script>
     <script src="systems/movementSystem.js"></script>

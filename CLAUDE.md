@@ -16,8 +16,10 @@ No build step, no dependencies. Pure vanilla JS loaded via `<script>` tags in `i
 | `fps` | `60` | Tick rate; controls all frame-based timers |
 | `attackFrames` | `18` | Duration of punch/kick animations |
 | `hitFrames` | `Math.round(fps * 0.6)` = 36 | Duration of hit/block stun |
+| `ROUNDS_TO_WIN` | `2` | Round wins needed to take the match (best of 3) |
+| `ROUND_SECONDS` | `60` | Round clock; on time-over the higher-HP fighter wins |
 
-Changing `fps` automatically scales all durations.
+Changing `fps` automatically scales all durations (including the round clock and AI timings, which are expressed in seconds via helpers).
 
 ## ECS pattern
 
@@ -29,7 +31,7 @@ Systems run sequentially in the order they appear in `main.js`. This order matte
 
 ```
 statsSystem       — reads health, updates DOM
-endGameSystem     — checks win/lose
+roundSystem       — ticks the round clock, detects KO / time-over → endRound()
 renderingSystem   — draws current frame (reads spriteState from previous tick)
 userInputSystem   — translates keydown/keyup into component flags
 movementSystem    — applies movement, resets directional flags
@@ -57,7 +59,9 @@ Located at the bottom of `movementSystem.js`. Uses two arrays:
 
 `justPressed = downEvents.filter(k => !prevDown.includes(k))` — fires only on the initial keydown, not while held. Used for attack/kick so spamming doesn't freeze the animation.
 
-Movement keys (`←→↑↓`) use `downEvents` (held = continuous movement). Block (`Q`) also uses `downEvents` (hold to block). Attack (`A`) and kick (`S`) use `justPressed`.
+Movement keys (`←→↑↓`) use `downEvents` (held = continuous movement). Block (`Q`) also uses `downEvents` (hold to block). Attack (`A`), kick (`S`), and jump (`Space`) use `justPressed` — jump on `justPressed` stops a held Space from auto-bouncing on every landing.
+
+`userInputSystem.clearBuffer()` drops all buffered keys; `main.js` calls it on pause and round transitions so a key held across the gap can't fire a stray action on resume.
 
 ### Block flag ownership
 
@@ -98,13 +102,34 @@ To add a new animation:
 4. Add a rendering branch in the state machine (the `if/else if` chain in `renderingSystem`).
 5. Add the state name to `isKnockedDown()` in `combatSystem.js` if it should prevent attacking.
 
-## UI buttons (main.js + index.html)
+## Match & round flow (main.js + roundSystem.js)
 
-- `startGame()` — hides Start, shows the in-game button bar (`#ingameButtons`), resets fighters, starts the loop.
-- `inGameRestart()` — resets the fight and keeps playing immediately (always-available Restart, top-right).
-- `togglePause()` — `clearInterval` to freeze the loop (state is preserved), shows the "Paused" overlay; click again to resume via `runLoop()`. The overlay is `pointer-events: none` and sits below the button bar so Resume stays clickable.
-- `restartGame()` — the game-over modal button; resets and returns to the Start screen.
-- `clearPause()` resets the pause toggle on every entry point so you can't get stuck in the "Resume" state.
+Best-of-3. Match/round state are top-level `let`s in `main.js` (`playerWins`, `enemyWins`, `roundFramesLeft`, `roundActive`) and are read/written by `roundSystem` through the shared global scope — the same way `combatSystem` reads `fps`.
+
+- `roundSystem` runs each tick **only while `roundActive`**: it counts `roundFramesLeft` down, mirrors the seconds to `#round-timer`, and calls `endRound(result, reason)` on a KO or at time-over (higher HP wins; tie = draw).
+- `endRound()` awards the point, updates the round pips, and either shows the between-rounds banner + `setTimeout(startRound, 1800)`, or calls `endMatch()` when someone reaches `ROUNDS_TO_WIN`.
+- `startRound()` resets fighters, sets enemy speed from the difficulty, refills the clock, clears the fx + input buffer, and calls `runLoop()`. `startMatch()` zeroes the scores and starts round 1.
+- The loop is a single `setInterval`; `runLoop()` always `clearInterval`s first. The between-rounds gap is tracked by `roundTimeoutId` and cleared on every entry point so restarts can't double-schedule a round.
+
+## UI buttons & controls (main.js + index.html)
+
+- `startGame()` → `startMatch()`; hides Start + difficulty selector, resumes the AudioContext, shows the in-game bar (`#ingameButtons`: Pause / Restart / Mute).
+- `inGameRestart()` and the modal `restartGame()` both start a **fresh match** (scores 0).
+- `togglePause()` — `clearInterval` freezes the loop (and the round clock); guarded so it no-ops between rounds. Overlay is `pointer-events: none` and sits below the button bar so Resume stays clickable.
+- Hotkeys (global `keydown` in `main.js`): **P** pause, **R** restart match, **M** mute.
+- `clearPause()` resets the toggle on every entry point so you can't get stuck in "Resume".
+
+## Difficulty
+
+`DIFFICULTIES` in `main.js` (`easy`/`normal`/`hard`) sets `window.aiConfig` from the start-screen `<select>`. `enemyAiSystem` reads `aggression`, `blockChance`, and the `gapMin`/`gapMax` hesitation window from it each frame; `startRound()` applies `speed` to the enemy's `speed` component.
+
+## Audio (audio.js)
+
+`window.SFX` is a tiny WebAudio synth — **no audio asset files**. Sounds are oscillator/noise blips: `swing`, `hit`, `block`, `ko`, `roundStart`. The AudioContext must be resumed from a user gesture (`SFX.resume()` on the Start click). `combatSystem` triggers swing/hit/block; `endRound` triggers `ko`. `SFX.toggleMute()` backs the Mute button / `M` key.
+
+## Hit feedback / juice (combat → render)
+
+`combatSystem` calls `window.spawnHitFx(x, y, dealt, kind)` (`main.js`) on every landed hit, which pushes spark + floating-damage-number effects to `window.fx` and bumps `window.fxShake`. `combatSystem.knockback()` shoves the victim away (softened on block). `renderingSystem` draws + decays `window.fx` and applies the decaying screen-shake translate (the background is drawn with a small overscan so the shake never exposes the canvas edges). `startRound()` clears `window.fx`/`fxShake`.
 
 ## Known quirks
 

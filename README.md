@@ -14,9 +14,9 @@ A 2D browser fighting game built with **vanilla JavaScript** using the **Entity 
 
 </div>
 
-Both fighters start with **100 HP**. The goal is to reduce the enemy's health to zero before your own runs out. The game ends when either fighter is knocked out, and a restart button is shown.
+Both fighters start with **100 HP**. Matches are **best of 3 rounds**: win a round by knocking the opponent out or by having more HP when the 60-second round clock runs out. Round wins are shown as pips under each health bar.
 
-The enemy is driven by a **human-like AI** that manages spacing, mixes punches and kicks, blocks reactively, and paces its attacks instead of mashing — see [Enemy AI](#enemy-ai). During a match an always-available **Restart** and a **Pause / Resume** button sit in the top-right corner.
+The enemy is driven by a **human-like AI** that manages spacing, mixes punches and kicks, blocks reactively, and paces its attacks instead of mashing — see [Enemy AI](#enemy-ai). Pick **Easy / Normal / Hard** on the start screen. During a match an always-available **Pause / Restart / Mute** bar sits in the top-right corner, hits land with sparks, floating damage numbers, knockback and screen-shake, and synthesized sound effects play throughout.
 
 ---
 
@@ -42,6 +42,9 @@ The enemy is driven by a **human-like AI** that manages spacing, mixes punches a
 | `A` | Punch |
 | `S` | Kick |
 | `Q` *(hold)* | Block — halves incoming damage |
+| `P` | Pause / resume |
+| `R` | Restart match |
+| `M` | Mute / unmute sound |
 
 ---
 
@@ -74,8 +77,8 @@ The game loop runs at 60 FPS via `setInterval` and pipes entities through all sy
 | System | Responsibility |
 |--------|---------------|
 | `statsSystem` | Updates HP bars in the DOM |
-| `endGameSystem` | Detects win/lose and shows game-over screen |
-| `renderingSystem` | Draws sprites to canvas, resolves animation frames |
+| `roundSystem` | Ticks the round clock, detects KO / time-over, drives the match |
+| `renderingSystem` | Draws sprites + hit effects to canvas, screen shake, animation frames |
 | `userInputSystem` | Maps keyboard events to component flags |
 | `movementSystem` | Applies velocity, gravity, jump arc, playfield clamp |
 | `enemyAiSystem` | Drives the enemy: spacing, attack/kick/block intent flags |
@@ -120,7 +123,8 @@ Combat is fully symmetric: the enemy can block your attacks (and take reduced da
 ```
 -ECSGame/
 ├── index.html
-├── main.js                    # Game loop, settings (fps, attackFrames)
+├── main.js                    # Game loop, settings, match/round flow, difficulty, fx
+├── audio.js                   # Synthesized WebAudio sound effects (no asset files)
 ├── components/
 │   └── components.js          # Component & Entity base classes
 ├── entities/
@@ -128,13 +132,13 @@ Combat is fully symmetric: the enemy can block your attacks (and take reduced da
 │   ├── playerEntity.js
 │   └── enemyEntity.js
 ├── systems/
-│   ├── combatSystem.js        # Damage, block, all animation state changes
-│   ├── enemyAiSystem.js       # Enemy movement and attack intent
+│   ├── combatSystem.js        # Damage, block, knockback, hit effects, animation state
+│   ├── enemyAiSystem.js       # Human-like enemy AI (spacing, mixups, blocking)
 │   ├── movementSystem.js      # Physics, input mapping
-│   ├── renderingSystem.js     # Canvas drawing, sprite selection
+│   ├── renderingSystem.js     # Canvas drawing, hit sparks/damage numbers, screen shake
 │   ├── collisionSystem.js
 │   ├── statsSystem.js
-│   └── endGameSystem.js
+│   └── roundSystem.js         # Round clock + best-of-3 match flow
 └── images/
     ├── background.png
     └── sprites/               # Sprite strips (one row per animation state)

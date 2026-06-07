@@ -26,6 +26,14 @@ const enemyAiSystem = (function aiSystem() {
     const player = entities.find((x) => x.components.name.value === "player");
     if (!e || !player) return entities;
 
+    // Difficulty tuning (set by main.js). Falls back to "normal" values.
+    const cfg = window.aiConfig || {
+      aggression: 0.8,
+      blockChance: 0.55,
+      gapMin: 0.18,
+      gapMax: 0.6,
+    };
+
     // Clear per-frame action flags. Movement is applied directly to position
     // below, so the directional flags (which movementSystem drives at speed 5)
     // are intentionally left alone.
@@ -104,16 +112,16 @@ const enemyAiSystem = (function aiSystem() {
       // Finish a guard already committed to.
       e.components.block.value = true;
       blockHold--;
-    } else if (inRange && playerAttacking && Math.random() < 0.55) {
+    } else if (inRange && playerAttacking && Math.random() < cfg.blockChance) {
       // React to the player's swing by guarding for a short window.
       e.components.block.value = true;
       blockHold = randInt(sec(0.13), sec(0.33));
     } else if (inRange && offCooldown && attackGap <= 0 && intent !== "retreat") {
       // Throw something — mostly attacks, mixing kicks and punches, then pause.
-      if (Math.random() < 0.8) {
+      if (Math.random() < cfg.aggression) {
         if (Math.random() < 0.45) e.components.kick.value = true;
         else e.components.isAttacking.value = true;
-        attackGap = randInt(sec(0.18), sec(0.6));
+        attackGap = randInt(sec(cfg.gapMin), sec(cfg.gapMax));
       }
     }
 
